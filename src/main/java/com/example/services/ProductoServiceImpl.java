@@ -12,9 +12,8 @@ import org.springframework.stereotype.Service;
 import com.example.dao.ProductoDao;
 import com.example.entities.Producto;
 
-
 @Service
-public class productoServiceImpl implements ProductoService {
+public class ProductoServiceImpl implements ProductoService {
 
     @Autowired
     private ProductoDao productoDao;
@@ -30,19 +29,20 @@ public class productoServiceImpl implements ProductoService {
     
     }
 
-    @Override
-    public Producto findById(long id) {
-        return productoDao.findById(id);
-    }
 
     @Override
     public Producto save(Producto producto) {
         return productoDao.save(producto);
     }
-
+    
     @Override
     public void delete(Producto producto) {
        productoDao.delete(producto);
     }
+
+   @Override
+   public Producto findById(long id) {
+      return productoDao.findById(id);
+   }
    
 }
