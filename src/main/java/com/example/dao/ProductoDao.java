@@ -45,7 +45,7 @@ public interface ProductoDao extends JpaRepository <Producto, Long> {
 
     //Elegir el sort de domain
     @Query(value = "select p from Producto p letf fetch p.presentacion")// esto es HQL
-     public List <Producto>findAll(Sort sort);
+     public List<Producto> findAll(Sort sort);
 
      /**
       * El siguiente método recupera una página de producto
@@ -60,7 +60,8 @@ public interface ProductoDao extends JpaRepository <Producto, Long> {
       */
 
       @Query(value = "select p from Producto p letf fetch p.presentacion where p.id = :id")
-        public List<Producto> findById(long id);
+        public Producto findById(long id);
+
 
 
 }
