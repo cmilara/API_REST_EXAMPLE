@@ -16,5 +16,6 @@ public interface ProductoService {
     //le puedes pedir producto
     public Producto findById(long id);
     public Producto save (Producto producto);
-    public void delete (Producto producto);
+    public void delete (Producto producto); 
+    
 }
