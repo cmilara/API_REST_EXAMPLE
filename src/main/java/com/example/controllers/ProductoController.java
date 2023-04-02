@@ -1,5 +1,6 @@
 package com.example.controllers;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -26,9 +27,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.entities.Producto;
 import com.example.services.ProductoService;
+import com.example.utilities.Fileuploadutil;
 
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -39,6 +42,8 @@ public class ProductoController {
 
     @Autowired
     private ProductoService productoService;
+
+    private Fileuploadutil fileuploadutil;
 
     /**
      * El metodo siguiente va a responder a una peticion (request) del tipo:
@@ -125,15 +130,28 @@ public class ProductoController {
 
     /**
      * El método siguiente persiste un producto en la base de datos
+     * @throws IOException
      */
         // recibe en el cuerpo un JSON que es el producto q queremos dar de alta. EL producto viene dentro de la peticion cuando es post
         // si es get viene el producto en la cabecera. El metodo insert recibe en el cuerpo de la peticion @Requestbody el producto
         // Se valida el producto que ha llegado con @Valid (tiene q cumplir con los requisitos puestos en la entidad)
         //BindingResult: 
-        @PostMapping
-        @Transactional
-        public ResponseEntity<Map<String,Object>> insert(@Valid @RequestBody Producto producto, BindingResult result){
 
+
+         // Guardar (Persistir), un producto, con su presentacion en la base de datos
+    // Para probarlo con POSTMAN: Body -> form-data -> producto -> CONTENT TYPE ->
+    // application/json
+    // no se puede dejar el content type en Auto, porque de lo contrario asume
+    // application/octet-stream
+    // y genera una exception MediaTypeNotSupported
+        @PostMapping( consumes = "multipart/form-data")
+        @Transactional
+        public ResponseEntity<Map<String,Object>> insert(
+            @Valid @RequestBody Producto producto,
+             BindingResult result,
+             @RequestParam("file")MultipartFile file) throws IOException{
+               
+                
             Map<String, Object> responseAsMap = new HashMap<>();
 
             ResponseEntity<Map<String, Object>> responseEntity = null;
@@ -153,7 +171,13 @@ public class ProductoController {
 
                     return responseEntity;
                 }
-                //Si no hay errores persistimos el producto
+                //Si no hay errores persistimos el producto,
+                //comprobando previamente si nos han enviado una imagen o archivo 
+
+                if(!file.isEmpty()){
+                   String fileCode = fileuploadutil.saveFile(file.getOriginalFilename(), file);
+                   producto.setImagenProducto(fileCode+"-"+file.getOriginalFilename());     
+                }
                 Producto productoDB = productoService.save(producto);
                
                 try{
