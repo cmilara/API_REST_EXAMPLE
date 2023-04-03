@@ -8,13 +8,16 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
@@ -31,14 +34,18 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.entities.Producto;
+import com.example.model.FileUploadResponse;
 import com.example.services.ProductoService;
+import com.example.utilities.FileDownloadUtil;
 import com.example.utilities.FileuploadUtil;
 
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/productos")
+@RequiredArgsConstructor
 public class ProductoController {
 
     @Autowired
@@ -46,6 +53,9 @@ public class ProductoController {
 
     @Autowired
     private FileuploadUtil fileuploadUtil;
+
+    //La siguiente dependencia se inyectará por constructor (tenemos que meter @RequiredArgsContructor) aunque tambien se podría con Autowired, 
+    private final FileDownloadUtil fileDownloadUtil;
 
     /**
      * El metodo siguiente va a responder a una peticion (request) del tipo:
@@ -180,7 +190,22 @@ public class ProductoController {
                 if(!file.isEmpty()){
                    String fileCode =  fileuploadUtil.saveFile(file.getOriginalFilename(), file);
                    
-                   producto.setImagenProducto(fileCode+"-"+file.getOriginalFilename());     
+                   producto.setImagenProducto(fileCode+"-"+file.getOriginalFilename()); 
+                   
+                   //Devolver info respecto a file recibido
+
+
+
+                   FileUploadResponse fileUploadResponse = FileUploadResponse
+                                .builder()
+                                .fileName(fileCode + "-" + file.getOriginalFilename())
+                                .downloadURI("/productos/downloadFile/"
+                                    +fileCode + "-" + file.getOriginalFilename())
+                                .size(file.getSize())
+                                .build();
+
+                    responseAsMap.put("info de la imagen: ", "fileUploadResponse");         
+
                 }
                 Producto productoDB = productoService.save(producto);
                
@@ -286,6 +311,38 @@ public class ProductoController {
         return responseEntity;
     
     }
+
+    /**
+     *  Implementa filedownnload end point API 
+     **/    // esto seria un end point
+    @GetMapping("/downloadFile/{fileCode}")
+    public ResponseEntity<?> downloadFile(@PathVariable(name = "fileCode") String fileCode) {
+
+        Resource resource = null;
+
+        try {
+            resource = fileDownloadUtil.getFileAsResource(fileCode);
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
+        }
+
+        if (resource == null) {
+            return new ResponseEntity<>("File not found ", HttpStatus.NOT_FOUND);
+        }
+
+        String contentType = "application/octet-stream";
+        String headerValue = "attachment; filename=\"" + resource.getFilename() + "\"";
+
+        return ResponseEntity.ok()
+        .contentType(MediaType.parseMediaType(contentType))
+        .header(HttpHeaders.CONTENT_DISPOSITION, headerValue)
+        .body(resource);
+
+    }
+
+
+
+
 }
 
 
