@@ -13,8 +13,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 //para tener los beans que me permitan crear objetos (¿?)
+
 @Component
-public class Fileuploadutil {
+public class FileuploadUtil {
 
     
 
